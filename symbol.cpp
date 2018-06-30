@@ -12,6 +12,62 @@
 #define SEMERROR(code,name) Error::semError(code,name);
 
 
+void Var::setType(Tag t) {
+    type = t;
+    if(type == KW_VOID){
+        SEMERROR(VOID_VAR,"");
+        type = KW_INT;
+    }
+    if(!externed&&type == KW_INT)size = 4;
+    else if(!externed&&type == KW_CHAR)size =1;
+}
+
+void Var::setArray(int len) {
+    if(len<=0){
+        SEMERROR(ARRAY_LEN_INVALID,name);
+        return ;
+    }else {
+        isArray = true;
+        isLeft =false;
+        arraySize = len;
+        if(!externed)size*=len;
+    }
+}
+
+bool Var::isBase() {
+    return !isArray && !isPtr;
+}
+
+bool Var::isVoid() {
+    return type==KW_VOID;
+}
+
+bool Var::setInit() {
+    Var*init = initData;
+    if(!init)return false;
+    inited = false;
+    if(externed){//声明不允许初始化
+        SEMERROR(DEC_INIT_DENY,name);
+    }
+    else if(!GenIR::typeCheck(this,init)){//类型检查不兼容
+        SEMERROR(VAR_INIT_ERR,name);
+    }
+    else if(init->literal){//初始值为常量
+        inited = true;
+        if(init->isArray)//字符串常量
+            ptrVal = init->name;
+        else
+            intVal = init->intVal;
+    }else {
+        if(scopePath.size() == 1){//全局变量
+            SEMERROR(GLB_INIT_ERR,name);
+        }
+        else
+            return true;//表达式initData后续处理
+    }
+    return false;
+}
+
 //void变量
 Var::Var() {
     clear();
@@ -38,7 +94,7 @@ Var::Var(vector<int>&sp,Var *v) {
     scopePath = sp;
     setType(v->type);
     setPtr(v->isPtr||v->isArray);
-    setName("";)
+    setName("");
     setLeft(false);
 }
 
@@ -122,6 +178,36 @@ string Var::getName() {
     return name;
 }
 
+bool Var::getArray() {
+    return isArray;
+}
+
+bool Var::getPtr() {
+    return isPtr;
+}
+
+string Var::getStrVal() {
+    return strVal;
+}
+
+bool Var::isRef() {
+    return !!ptr;
+}
+
+bool Var::isLiteral() {
+    return this->literal&&isBase();
+}
+bool Var::getLeft() {
+    return isLeft;
+}
+
+Var* Var::getPointer() {
+    return ptr;
+}
+void Var::setPointer(Var* p){
+    ptr = p;
+}
+
 void Fun::enterScope() {
     scopeEsp.push_back(0);
 }
@@ -130,3 +216,67 @@ void Fun::leaveScope() {
     curEsp -= scopeEsp.back();
     scopeEsp.pop_back();
 }
+
+void Fun::locate(Var *var) {
+    int size = var->getSize();
+    size+=(4-size%4)%4;
+    scopeEsp.back()+=size;
+    curEsp+=size;
+    var->setOffset(-curEsp);
+}
+
+bool Fun::match(Fun*f){
+    if(name != f->name){
+        return false;
+    }
+    if(paraVar.size() != f->paraVar.size()){
+        return false;
+    }
+    int len = paraVar.size();
+    for(int i  = 0 ; i < len ; i++){
+        if(GenIR::typeCheck(paraVar[i],f->paraVar[i])){
+            if(paraVar[i]->getType()!=f->paraVar[i]->getType()){
+                SEMWARN(FUN_DEC_CONFLICT,name);
+            }
+        }else {
+            return false;
+        }
+    }
+    if(type!=f->type){
+        SEMWARN(FUN_RET_CONFLICT,name);
+    }
+    return true;
+}
+
+bool Fun::match(vector<Var*> &args){
+    if(paraVar.size() != args.size()){
+        return false;
+    }
+    int len = paraVar.size();
+    for(int i = 0 ; i < len ; i ++){
+        if(!GenIR::typeCheck(paraVar[i],args[i]))return false;
+    }
+    return true;
+}
+
+void Fun::define(Fun* def){
+    externed = false;
+    paraVar = def->paraVar;
+}
+
+void Fun::setReturnPoint(InterInst *inst) {
+    returnPoint = inst;
+}
+
+InterInst* Fun::getReturnPoint() {
+    return returnPoint;
+}
+
+void Fun::addInst(InterInst *inst) {
+    interCode.addInst(inst);
+}
+
+Tag Fun::getType() {
+    return type;
+}
+

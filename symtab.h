@@ -38,5 +38,24 @@ class SymTab{
 public:
     SymTab();
     ~SymTab();
-    void addVar(Var* v);
+
+    void enter();//进入局部作用域
+    void leave();//离开局部作用域
+
+    void addVar(Var* v);//添加一个变量
+    void addStr(Var* v);//添加s一个字符串常量
+    Var* getVar(string name);
+
+    //函数管理
+    void decFun(Fun*fun);
+    void defFun(Fun*fun);
+    void endDefFun();
+    Fun* getFun(string name,vector<Var*>&args);
+    void addInst(InterInst*inst);
+
+    //外部调用函数
+    void setIr(GenIR*ir);
+    vector<int>& getScopePath();//获取scopePath
+    Fun*getCurFun();//获取当前分析的函数
+
 };

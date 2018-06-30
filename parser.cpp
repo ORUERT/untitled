@@ -7,6 +7,7 @@
 #include "lexer.h"
 #include "symbol.h"
 #include "symtab.h"
+#include "genir.h"
 #include "error.h"
 
 #define SYNERROR(code ,t)Error::synError(code ,t );
@@ -353,7 +354,7 @@ void Parser::statement(){
             break;
         case KW_RETURN:
             move();
-            altexpr();
+            ir.genReturn(altexpr());
             if(!match(SWMICON)){
                 recovery(TYPE_FIRST||STATEMENT_FIRST||F(RBRACE),SEMICON_LOST,SEMICON_WRONG);
             }
@@ -372,6 +373,7 @@ void Parser::statement(){
 	<block>				->	<block>|<statement>
 */
 void Parser::whilestat(){
+    symtab.enter();
     match(KW_WHILE);
     if(!match(LPAREN))
         recovery(EXPR_FIRST||F(RPAREN),LPAREN_LOST,LPAREN_WRONG);
@@ -507,6 +509,7 @@ Var* Parser::assexpr(){
 Var* Parser::asstail(Var*lval){
     if(match(ASSIGN)){
         Var*rval=assexpr();
+        Var*result = ir.genTwoOp(lval,ASSIGN,rval);
         return asstail(result);
     }
     return lval;
