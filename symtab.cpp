@@ -8,12 +8,14 @@
 //打印语义错误
 #define SEMERROR(code,name) Error::semError(code,name)
 
+Var* SymTab::voidVar=NULL;
 
 vector<int>& SymTab::getScopePath(){
     return scopePath;
 }
 
 SymTab::SymTab() {
+    voidVar= new Var();
 
     scopeId = 0;
     curFun = NULL;

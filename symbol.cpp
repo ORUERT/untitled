@@ -193,6 +193,9 @@ string Var::getStrVal() {
 bool Var::isRef() {
     return !!ptr;
 }
+Var* Var::getVoid() {
+    return SymTab::voidVar;
+}
 
 bool Var::isLiteral() {
     return this->literal&&isBase();
@@ -206,6 +209,13 @@ Var* Var::getPointer() {
 }
 void Var::setPointer(Var* p){
     ptr = p;
+}
+
+Var* Var::getStep(Var *v) {
+    if(v->isBase())return Symtab::one;
+    else if(v->type == KW_CHAR)return SymTab::one;
+    else if(v->type == KW_INT)return SymTab::four;
+    else return NULL;
 }
 
 void Fun::enterScope() {
@@ -279,4 +289,3 @@ void Fun::addInst(InterInst *inst) {
 Tag Fun::getType() {
     return type;
 }
-

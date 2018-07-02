@@ -374,6 +374,8 @@ void Parser::statement(){
 */
 void Parser::whilestat(){
     symtab.enter();
+    InterInst* _while,*_exit;
+//    ir.genWhile
     match(KW_WHILE);
     if(!match(LPAREN))
         recovery(EXPR_FIRST||F(RPAREN),LPAREN_LOST,LPAREN_WRONG);

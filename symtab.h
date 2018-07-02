@@ -35,7 +35,11 @@ class SymTab{
     int scopeId;//作用域唯一编号
     vector<int>scopePath;//动态记录作用域的路径，全局为0,0 1 2-第一个函数的第一个局部块
 
+    GenIR* ir;
+
 public:
+    static Var* voidVar;//特殊变量
+
     SymTab();
     ~SymTab();
 

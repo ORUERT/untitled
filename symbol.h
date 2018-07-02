@@ -70,11 +70,13 @@ public:
     bool isVoid();
     bool getArray();
     bool getPtr();
+    Var* getVoid();
     bool isRef();
     bool isLiteral();
     bool getLeft();//获取左值属性
     Var* getPointer();//获取指针
     void setPointer();//设置指针
+    Var* getStep(Var*v);
 };
 
 /*******************************************************************************
